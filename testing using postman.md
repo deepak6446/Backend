@@ -6,11 +6,11 @@ pm.test("To have status code 201", function() {
 })
 // console.log(jsonData)
 pm.test("To have required keys", function() {
-    pm.expect(jsonData).to.have.property("activityType")
-    pm.expect(jsonData).to.have.property("recommendationId")
-    pm.expect(jsonData).to.have.property("isDeleted")
-    pm.expect(jsonData).to.have.property("activityId")
-    pm.expect(jsonData.activityId).not.null
-    postman.setEnvironmentVariable("activity-id", jsonData.activityId);
+    pm.expect(jsonData).to.have.property("key1")
+    pm.expect(jsonData).to.have.property("key2")
+    pm.expect(jsonData).to.have.property("key3")
+    pm.expect(jsonData).to.have.property("key4")
+    pm.expect(jsonData.key5).not.null
+    postman.setEnvironmentVariable("key-id", jsonData.key5);
 })
 ```
