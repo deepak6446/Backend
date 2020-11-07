@@ -1,0 +1,18 @@
+//file is structured using protocol buffers. 
+syntax = "proto3";
+
+package user;
+
+service UserService {
+  rpc FindOne (UserById) returns (User) {}
+}
+
+message UserById {
+  int32 id = 1;
+}
+
+message User {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+}
