@@ -1,0 +1,79 @@
+{
+    "30": {
+        "number_of_core_instances":4,
+        "total_number_of_virtual_cores_per_instance": 32,
+        "total_ram_per_instance": 56,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "45": {
+        "number_of_core_instances":6,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "50": {
+        "number_of_core_instances":8,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "55": {
+        "number_of_core_instances": 12,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "60": {
+        "number_of_core_instances":15,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "65": {
+        "number_of_core_instances":18,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "70": {
+        "number_of_core_instances":22,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "75": {
+        "number_of_core_instances":24,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "150": {
+        "number_of_core_instances":50,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "300": {
+        "number_of_core_instances":100,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    },
+    "400": {
+        "number_of_core_instances":100,
+        "total_number_of_virtual_cores_per_instance": 64,
+        "total_ram_per_instance": 256,
+        "spark_executors_cores": 5,
+        "instance_name": "m6gd.16xlarge"
+    }
+}

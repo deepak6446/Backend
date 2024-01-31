@@ -1,0 +1,104 @@
+format_version: 3
+pipelines:
+  data-analytics-api-build-test-publish:
+    group: analytics
+    label_template: ${git[:7]}
+    lock_behavior: none
+    display_order: -1
+    materials:
+      git:
+        git: git@github.com:<repo>/data-analytics-api.git
+        shallow_clone: false
+        branch: release
+        blacklist:
+          - helm/**/*
+          - helm.gocd.yaml
+    stages:
+      - lint-and-test:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: success
+            allow_only_on_success: true
+          jobs:
+            lint-and-test:
+              elastic_profile_id: k8s-cicd-publish-npm18-package
+              timeout: 0
+              artifacts:
+                - build:
+                    source: coverage
+                    destination: coverage
+              tasks:
+                - exec:
+                    arguments:
+                      - -c
+                      - echo //npm.pkg.github.com/:_authToken=$GITHUB_PERSONAL_ACCESS_TOKEN > .npmrc
+                    command: sh
+                - exec:
+                    arguments:
+                      - -c
+                      - echo "@<repo>:registry=https://npm.pkg.github.com/<repo>" >> .npmrc
+                    command: sh
+                - exec:
+                    arguments:
+                      - install
+                    command: npm
+                    run_if: passed
+                - exec:
+                    arguments:
+                      - run
+                      - lint
+                    command: npm
+                    run_if: passed
+                - exec:
+                    arguments:
+                      - run
+                      - test:cov
+                    command: npm
+                    run_if: passed
+                - exec:
+                    arguments:
+                      - audit
+                      - --audit-level=critical
+                    command: npm
+                    run_if: passed
+      - build-and-publish:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: success
+            allow_only_on_success: false
+          jobs:
+            build-and-publish:
+              elastic_profile_id: k8s-cicd-dind-build-npm-package
+              timeout: 0
+              artifacts:
+                - external:
+                    id: azure-daa-docker-image
+                    store_id: azure-repository
+                    configuration:
+                      options:
+                        Image: azurepoc.azurecr.io/data-analytics-api
+                        Tag: v${GO_PIPELINE_LABEL}
+                - external:
+                    id: data-analytics-api-docker-image
+                    store_id: ci-ecr-repository
+                    configuration:
+                      options:
+                        Image: 773588914490.dkr.ecr.us-west-2.amazonaws.com/data-analytics-api
+                        Tag: v${GO_PIPELINE_LABEL}
+              tasks:
+                - exec:
+                    arguments:
+                      - -c
+                      - docker build . -t 773588914490.dkr.ecr.us-west-2.amazonaws.com/data-analytics-api:v${GO_PIPELINE_LABEL} --build-arg NPM_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN
+                    command: sh
+                    run_if: passed
+                - exec:
+                    arguments:
+                      - -c
+                      - docker tag 773588914490.dkr.ecr.us-west-2.amazonaws.com/data-analytics-api:v${GO_PIPELINE_LABEL} azurepoc.azurecr.io/data-analytics-api:v${GO_PIPELINE_LABEL}
+                    command: sh
+                    run_if: passed

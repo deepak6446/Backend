@@ -1,0 +1,90 @@
+format_version: 3
+pipelines:
+  data-analytics-api-dev14-deploy:
+    group: analytics
+    label_template: "${data-analytics-api-image}-${data-analytics-api-helm-package}"
+    lock_behavior: none
+    display_order: 1
+    parameters:
+      APPLICATION_NAME: data-analytics-api
+      RELEASE_REPO_URL: git@github.com:<repo>/cs-release.git
+      RELEASE_REPO_BRANCH: dev14
+      GIT_CONFIG_NAME: "CD Pipeline"
+      GIT_CONFIG_EMAIL: "devops@<repo>.com"
+    materials:
+      data-analytics-api-image:
+        pipeline: dev-data-analytics-api-build-test-publish
+        stage: build-and-publish
+      data-analytics-api-helm-package:
+        pipeline: data-analytics-api-helm-package-publish
+        stage: helm-publish
+    stages:
+      - dev14-deploy:
+          fetch_materials: true
+          keep_artifacts: false
+          clean_workspace: false
+          approval:
+            type: success
+            allow_only_on_success: false
+          jobs:
+            dev14-deploy:
+              elastic_profile_id: k8s-yaml
+              timeout: 0
+              tasks:
+                - fetch:
+                    pipeline: data-analytics-api-helm-package-publish
+                    stage: helm-publish
+                    job: helm-publish
+                    source: helm-package-version
+                    is_file: yes
+                    destination: ./
+                - exec:
+                    arguments:
+                      - -c
+                      - "git clone --single-branch --branch #{RELEASE_REPO_BRANCH} #{RELEASE_REPO_URL} release-repository"
+                    command: sh
+                - exec:
+                    working_directory: release-repository
+                    arguments:
+                      - -c
+                      - "git config user.email #{GIT_CONFIG_EMAIL} &&
+                        git config user.name #{GIT_CONFIG_NAME}"
+                    command: sh    
+                - exec:
+                    working_directory: release-repository/applications/templates
+                    arguments:
+                      - -c
+                      - "yaml_update spec/source/targetRevision `cat ../../../helm-package-version` #{APPLICATION_NAME}.yaml"
+                    command: sh
+                - exec:
+                    working_directory: release-repository/applications/templates
+                    arguments:
+                      - -c
+                      - "yaml_update spec/source/helm/parameters/0/name image.tag #{APPLICATION_NAME}.yaml &&
+                        yaml_update spec/source/helm/parameters/0/value `echo v$GO_PIPELINE_LABEL | cut -d'-' -f1` #{APPLICATION_NAME}.yaml" 
+                    command: sh
+                - exec:
+                    working_directory: release-repository/applications/templates
+                    arguments:
+                      - -c
+                      - "echo '======== Updated configuration ========' && cat #{APPLICATION_NAME}.yaml"
+                    command: sh
+                - exec:
+                    working_directory: release-repository
+                    arguments:
+                      - -c
+                      - git add ./
+                    command: sh
+                - exec:
+                    working_directory: release-repository/applications/templates
+                    arguments:
+                      - -c
+                      - "git commit -m \"Update #{APPLICATION_NAME} to version `echo v$GO_PIPELINE_LABEL | cut -d'-' -f1` with package `cat ../../../helm-package-version`\"" 
+                    command: sh
+                - exec:
+                    working_directory: release-repository
+                    arguments:
+                      - -c
+                      - "git push origin #{RELEASE_REPO_BRANCH}"
+                    command: sh
+

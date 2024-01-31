@@ -1,0 +1,59 @@
+{
+  "name": "@<repo>/logs-sdk",
+  "version": "1.0.59",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --config ./jest.config.json",
+    "lint": "eslint  \"./**/*.js\" --fix ; for file in $(find src test -iname \"*.json\"); do prettier $file --write; done",
+    "test:cov": "jest --config ./jest.config.json --coverage --detectOpenHandles --runInBand --forceExit --no-cache --testPathIgnorePatterns 'lambda-failure-events'"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<repo>/logs-sdk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/<repo>/logs-sdk/issues"
+  },
+  "homepage": "https://github.com/<repo>/logs-sdk#readme",
+  "devDependencies": {
+    "commitizen": "^4.2.4",
+    "eslint": "^8.23.1",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.3.0",
+    "eslint-plugin-promise": "^6.0.1",
+    "prettier": "^2.8.3",
+    "semantic-release": "^19.0.2"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.8.18",
+    "@grpc/proto-loader": "^0.7.8",
+    "jest": "^27.4.5",
+    "kafka-node": "^5.0.0",
+    "mock-require": "^3.0.3"
+  },
+  "overrides": {
+    "kafka-node": {
+      "snappy": {
+        "prebuild-install": {
+          "npmlog": {
+            "gauge": {
+              "string-width": {
+                "strip-ansi": {
+                  "ansi-regex": "3.0.1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

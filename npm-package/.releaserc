@@ -1,0 +1,26 @@
+{
+  "branches": ["develop"],
+  "plugins": [
+    "@semantic-release/npm",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/github", {
+        "successComment": false,
+        "failComment": false,
+        "failTitle": false,
+        "labels": false,
+        "releasedLabels": false
+      }
+    ],
+    [
+      "@semantic-release/commit-analyzer", {
+        "releaseRules": [
+          {
+            "message": "*",
+            "release": "patch"
+          }
+        ]
+      }
+    ]
+  ]
+}
