@@ -1,0 +1,11 @@
+{
+  "ui": {
+    "//": "existing config for your ui job..."
+  },
+  "fastly_processor": {
+    "source_bucket": "your-company-fastly-logs-bucket",
+    "dest_bucket": "your-company-analytics-bucket",
+    "source_data_path": "raw",
+    "dest_data_path": "processed/sdk_counts"
+  }
+}
