@@ -1,0 +1,35 @@
+[project]
+name = "recommendation-service"
+version = "0.1.0"
+description = "Python Recommendation Service"
+authors = [
+    {name = "Deepak",email = "deepak@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi (>=0.122.0,<0.123.0)",
+    "uvicorn[standard] (>=0.38.0,<0.39.0)",
+    "pydantic (>=2.12.4,<3.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)",
+    "tensorflow-cpu (>=2.18.0,<3.0.0)",
+    "numpy (>=1.26.0,<2.0.0)"
+]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.1,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "ruff (>=0.14.6,<0.15.0)",
+    "black (>=25.11.0,<26.0.0)",
+    "mypy (>=1.18.2,<2.0.0)",
+    "httpx (>=0.28.0,<0.29.0)"
+]

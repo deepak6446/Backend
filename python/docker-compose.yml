@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  recommendation-service:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_TYPE=dummy
+      - PROJECT_NAME=Recommendation Service
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  test:
+    build:
+      context: .
+      target: builder
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+    command: poetry run pytest -v
+    profiles:
+      - test
