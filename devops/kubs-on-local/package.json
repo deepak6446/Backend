@@ -1,0 +1,14 @@
+{
+  "name": "kubernetes-nodejs-sample",
+  "version": "1.0.0",
+  "description": "A sample Node.js application to demonstrate Kubernetes concepts.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "DevOps Expert",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

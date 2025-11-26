@@ -1,0 +1,193 @@
+# --- ConfigMap ---
+# A ConfigMap stores non-confidential configuration data in key-value pairs.
+apiVersion: v1 # Specifies the API version for this object. 'v1' is the core Kubernetes API.
+kind: ConfigMap # Specifies the type of Kubernetes object.
+metadata: # Data that uniquely identifies the object.
+  name: app-config # The name of our ConfigMap.
+data: # The actual data stored in the ConfigMap.
+  GREETING_MESSAGE: "Hello from the ConfigMap!" # A key-value pair that our app will read as an environment variable.
+
+---
+# --- Deployment ---
+# A Deployment manages a set of replicated Pods, ensuring a specified number of them are running.
+apiVersion: apps/v1 # The API version for Deployments. 'apps/v1' is the stable version.
+kind: Deployment # The object type is a Deployment.
+metadata: # Metadata for the Deployment.
+  name: nodejs-app-deployment # The name of our Deployment.
+spec: # The desired state for the Deployment.
+  replicas: 2 # Start with 2 instances of our application pod. The HPA will manage this number later.
+  selector: # How the Deployment finds which Pods to manage.
+    matchLabels: # Must match the labels defined in the pod template.
+      app: nodejs-app # The label key-value pair to match.
+  template: # The blueprint for the Pods that will be created.
+    metadata: # Metadata for the Pods.
+      labels: # Labels to apply to each Pod.
+        app: nodejs-app # This label allows the Deployment and Service to identify the Pods.
+    spec: # The specification for the Pods' contents.
+      restartPolicy: Always # Always restart a container if it fails. This is the default.
+      containers: # A list of containers to run in the Pod.
+        - name: nodejs-app-container # The name of the container.
+          image: your-dockerhub-username/nodejs-app:latest # The Docker image to use. **REPLACE THIS with your actual image name.**
+          imagePullPolicy: IfNotPresent # Only pull the image if it's not already on the node. Useful for local dev.
+          ports: # A list of ports to expose from the container.
+            - containerPort: 8080 # The port the application listens on inside the container.
+
+          # --- Liveness Probe ---
+          # Checks if the container is still running correctly. If it fails, Kubernetes restarts the container.
+          livenessProbe:
+            httpGet: # Performs an HTTP GET request.
+              path: /healthz # The endpoint to check.
+              port: 8080 # The port to check on the container.
+            initialDelaySeconds: 10 # Wait 10 seconds after the container starts before first probing.
+            periodSeconds: 5 # Probe every 5 seconds.
+            failureThreshold: 3 # The pod is considered unhealthy after 3 consecutive failures.
+
+          # --- Readiness Probe ---
+          # Checks if the container is ready to accept traffic. If it fails, Kubernetes removes the Pod from the Service's endpoints.
+          readinessProbe:
+            httpGet: # Performs an HTTP GET request.
+              path: /readyz # The endpoint to check.
+              port: 8080 # The port to check on the container.
+            initialDelaySeconds: 20 # Wait 20 seconds before first probing. Our app needs 15s, so this gives a buffer.
+            periodSeconds: 5 # Probe every 5 seconds.
+            failureThreshold: 3 # The pod is considered not ready after 3 consecutive failures.
+
+          # --- Resource Management ---
+          # Defines the compute resources required by the container.
+          resources:
+            requests: # The minimum resources the container needs. Kubernetes guarantees these resources.
+              cpu: "100m" # Requests 0.1 CPU core (100 millicores).
+              memory: "128Mi" # Requests 128 Mebibytes of memory.
+            limits: # The maximum resources the container can use.
+              cpu: "200m" # Limits usage to 0.2 CPU core.
+              memory: "256Mi" # Limits memory usage to 256 Mebibytes.
+
+          # --- Environment Variables ---
+          # Defines environment variables for the container.
+          env:
+            - name: GREETING_MESSAGE # The name of the environment variable.
+              valueFrom: # The value is sourced from another Kubernetes object.
+                configMapKeyRef: # Source the value from a key in a ConfigMap.
+                  name: app-config # The name of the ConfigMap.
+                  key: GREETING_MESSAGE # The key within the ConfigMap to use.
+            - name: API_KEY # The name of the environment variable.
+              valueFrom: # The value is sourced from another Kubernetes object.
+                secretKeyRef: # Source the value from a key in a Secret.
+                  name: app-secrets # The name of the Secret.
+                  key: API_KEY # The key within the Secret to use.
+
+          # --- Volume Mounts ---
+          # Mounts a volume inside the container.
+          volumeMounts:
+            - name: app-data # The name of the volume to mount (must match a volume defined below).
+              mountPath: /app/data # The path inside the container where the volume will be mounted.
+
+      # --- Volumes ---
+      # Defines volumes that can be used by the containers in the Pod.
+      volumes:
+        - name: app-data # The name of the volume.
+          emptyDir: {} # An emptyDir volume is temporary and tied to the Pod's lifecycle. It's useful for scratch space.
+
+---
+# --- Service ---
+# A Service provides a stable network endpoint (IP address and DNS name) for a set of Pods.
+apiVersion: v1 # The API version for Services.
+kind: Service # The object type is a Service.
+metadata: # Metadata for the Service.
+  name: nodejs-app-service # The name of our Service.
+spec: # The specification for the Service.
+  type: ClusterIP # Exposes the Service on an internal IP in the cluster. This is the default.
+  selector: # Selects Pods to route traffic to based on their labels.
+    app: nodejs-app # Routes traffic to any Pod with this label.
+  ports: # The ports exposed by the Service.
+    - protocol: TCP # The IP protocol for the port.
+      port: 80 # The port that the Service will expose.
+      targetPort: 8080 # The port on the Pods that traffic will be forwarded to.
+
+---
+# --- HorizontalPodAutoscaler (HPA) ---
+# The HPA automatically scales the number of Pods in a Deployment based on observed CPU utilization.
+apiVersion: autoscaling/v2 # The API version for HPA. v2 is preferred for its richer metric support.
+kind: HorizontalPodAutoscaler # The object type.
+metadata: # Metadata for the HPA.
+  name: nodejs-app-hpa # The name of our HPA.
+spec: # The specification for the HPA's behavior.
+  scaleTargetRef: # The target resource to scale.
+    apiVersion: apps/v1 # The API version of the target.
+    kind: Deployment # The kind of the target.
+    name: nodejs-app-deployment # The name of the Deployment to scale.
+  minReplicas: 2 # The minimum number of Pods to maintain.
+  maxReplicas: 10 # The maximum number of Pods to scale up to.
+  metrics: # The metrics to use for scaling decisions.
+    - type: Resource # Use a resource-based metric (like CPU or memory).
+      resource: # The specific resource to monitor.
+        name: cpu # Monitor CPU usage.
+        target: # The target value for the metric.
+          type: Utilization # Use the average utilization across all Pods.
+          averageUtilization: 50 # Target 50% average CPU utilization. If it goes above this, scale up.
+
+---
+# # --- Istio Gateway ---
+# # An Istio Gateway describes a load balancer operating at the edge of the mesh receiving incoming traffic.
+# apiVersion: networking.istio.io/v1beta1 # The API version for Istio Gateway resources.
+# kind: Gateway # The object type.
+# metadata: # Metadata for the Gateway.
+#   name: app-gateway # The name of our Gateway.
+# spec: # The specification for the Gateway.
+#   selector: # Selects the Istio ingress gateway controller to implement this Gateway.
+#     istio: ingressgateway # Use the default Istio ingress gateway.
+#   servers: # A list of server configurations.
+#     - port: # The port configuration.
+#         number: 80 # The port number to listen on.
+#         name: http # A name for the port.
+#         protocol: HTTP # The protocol to use.
+#       hosts: # A list of hosts to apply this configuration to.
+#         - "*" # The wildcard '*' means this applies to traffic for any host.
+
+# ---
+# # --- Istio VirtualService ---
+# # An Istio VirtualService defines a set of traffic routing rules to apply when a host is addressed.
+# apiVersion: networking.istio.io/v1beta1 # The API version for Istio VirtualService resources.
+# kind: VirtualService # The object type.
+# metadata: # Metadata for the VirtualService.
+#   name: app-virtualservice # The name of our VirtualService.
+# spec: # The specification for the VirtualService.
+#   hosts: # The destination hosts to which this routing rule applies.
+#     - "*" # Applies to requests for any host coming through the specified gateway.
+#   gateways: # The gateways this VirtualService is bound to.
+#     - app-gateway # Binds this VirtualService to our app-gateway.
+#   http: # A list of HTTP traffic routing rules.
+#     - match: # Conditions for matching incoming requests.
+#         - uri:
+#           # Match any request starting with /api/ followed by other characters
+#           regex: "^/api(/.*)$"
+#           rewrite:
+#             # Rewrite the URI to be only the part captured in the parentheses (\1)
+#             uri: "\\1"
+#       route: # The routing destination for matched traffic.
+#         - destination: # The target service for the traffic.
+#             host: nodejs-app-service # The Kubernetes Service to route traffic to.
+#             port: # The port on the destination service.
+#               number: 80 # The port number of the nodejs-app-service.
+
+# --- Kubernetes Ingress (Alternative to Istio) ---
+# This is a standard Kubernetes Ingress resource. It is commented out because we are using
+# the more powerful Istio Gateway and VirtualService for traffic management in this setup.
+# You would use this in a cluster without Istio, typically with an Ingress Controller like NGINX or Traefik.
+#
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nodejs-app-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nodejs-app-service
+                port:
+                  number: 80

@@ -25,6 +25,9 @@ func main() {
 
 	router := mux.NewRouter()
 
+	// Apply middleware globally
+	routes.Use(middleware.LogRequestBody)
+	
 	// Register routes
 	routes.RegisterRoutes(router)
 
